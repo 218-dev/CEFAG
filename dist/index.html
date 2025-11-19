@@ -6,6 +6,7 @@
     <link rel="icon" type="image/svg+xml" href="/assets/logo-CPmPqqKk.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>منظومة الأرشفة الإلكترونية</title>
+    <link rel="manifest" href="/manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Lateef&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Reem+Kufi+Ink&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
@@ -104,6 +105,53 @@
     <script type="module" crossorigin src="/assets/index-3BlP3dbo.js"></script>
   </head>
   <body>
+    <div id="pwa-choice" style="position:fixed;inset:0;background:#0f172a;color:#e2e8f0;display:none;align-items:center;justify-content:center;z-index:9999">
+      <div style="background:#111827;border:1px solid #1f2937;border-radius:12px;padding:24px;max-width:440px;width:90%;text-align:center">
+        <div style="font-size:36px;color:#f59e0b;margin-bottom:8px"><i class="bi bi-app-indicator"></i></div>
+        <h2 style="margin:0 0 8px 0">كيف تود المتابعة؟</h2>
+        <p style="margin:0 0 16px 0;color:#94a3b8;font-size:14px">يمكن التثبيت كتطبيق أو المتابعة عبر المتصفح.</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button id="btn-install" style="padding:10px 16px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#f59e0b;font-weight:700">متابعة كتطبيق</button>
+          <button id="btn-browser" style="padding:10px 16px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e2e8f0;font-weight:700">متابعة بالمستعرض</button>
+        </div>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      var deferredPrompt = null
+      var choiceShown = false
+      function showChoice(){
+        if (choiceShown) return
+        var el = document.getElementById('pwa-choice')
+        if (!el) return
+        el.style.display = 'flex'
+        choiceShown = true
+      }
+      window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault()
+        deferredPrompt = e
+        showChoice()
+      })
+      document.getElementById('btn-browser')?.addEventListener('click', function(){
+        var el = document.getElementById('pwa-choice')
+        if (el) el.style.display = 'none'
+      })
+      document.getElementById('btn-install')?.addEventListener('click', async function(){
+        if (!deferredPrompt) return
+        var el = document.getElementById('pwa-choice')
+        const r = await deferredPrompt.prompt()
+        if (el) el.style.display = 'none'
+        deferredPrompt = null
+      })
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        var el = document.getElementById('pwa-choice')
+        if (el) el.style.display = 'none'
+      }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function(){
+          navigator.serviceWorker.register('/sw.js')
+        })
+      }
+    </script>
   </body>
 </html>
