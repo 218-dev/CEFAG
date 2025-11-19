@@ -6,9 +6,9 @@ const app = express()
 app.use(express.json({ limit: '2mb' }))
 app.use(cors())
 
-const CONNECTION_STRING = process.env.DATABASE_URL
+const CONNECTION_STRING = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
 if (!CONNECTION_STRING) {
-  console.warn('DATABASE_URL is not set. Please set it before starting the server.')
+  console.warn('No database connection string set. Define DATABASE_URL or NEON_DATABASE_URL.')
 }
 
 const pool = new Pool({
@@ -432,15 +432,26 @@ async function sampleStatus() {
   opsSegments[idx] = opsOk
 }
 
-initSchema()
-  .then(async () => {
-    await sampleStatus()
-    setInterval(sampleStatus, SEGMENT_MS)
-    app.listen(PORT, () => {
-      console.log(`API server listening on http://localhost:${PORT}`)
+const IS_VERCEL = !!process.env.VERCEL
+
+if (IS_VERCEL) {
+  initSchema()
+    .catch(err => {
+      console.error('Failed to initialize schema', err)
     })
-  })
-  .catch(err => {
-    console.error('Failed to initialize schema', err)
-    process.exit(1)
-  })
+} else {
+  initSchema()
+    .then(async () => {
+      await sampleStatus()
+      setInterval(sampleStatus, SEGMENT_MS)
+      app.listen(PORT, () => {
+        console.log(`API server listening on http://localhost:${PORT}`)
+      })
+    })
+    .catch(err => {
+      console.error('Failed to initialize schema', err)
+      process.exit(1)
+    })
+}
+
+export default app
