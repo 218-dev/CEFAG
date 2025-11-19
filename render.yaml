@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: archiving-web
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node server/index.js
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromSecret: neon-database-url

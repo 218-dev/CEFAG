@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import { Pool } from 'pg'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 const app = express()
 app.use(express.json({ limit: '2mb' }))
@@ -444,6 +446,13 @@ if (IS_VERCEL) {
     .then(async () => {
       await sampleStatus()
       setInterval(sampleStatus, SEGMENT_MS)
+      const __filename = fileURLToPath(import.meta.url)
+      const __dirname = path.dirname(__filename)
+      const distPath = path.join(__dirname, '..', 'dist')
+      app.use(express.static(distPath))
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'))
+      })
       app.listen(PORT, () => {
         console.log(`API server listening on http://localhost:${PORT}`)
       })
