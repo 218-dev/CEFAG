@@ -171,13 +171,13 @@ app.get('/api/verify/:id', async (req, res) => {
       const settings = settingsRes.rows?.[0]?.data || {}
       const showLicense = settings.showLicenseNumber !== false
       const licenseNumber = settings.licenseNumber || 'LIC-9821-LY'
-      const officeTitle = (settings?.officeTitle && String(settings.officeTitle).trim()) || 'محرر عقود'
+      const officeTitle = (settings?.officeTitle && String(settings.officeTitle).trim()) || ''
       const notFoundHtml = `<!doctype html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>الإيصال غير موجود #${id}</title>
+    <title>العقد غير موجود #${id}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
@@ -197,11 +197,11 @@ app.get('/api/verify/:id', async (req, res) => {
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h1 style="display:flex;align-items:center;gap:8px;font-weight:800;margin:0">
           <i class="bi bi-x-circle-fill" style="color:#dc2626"></i>
-          <span>الإيصال غير موجود</span>
+          <span>العقد غير موجود</span>
         </h1>
         <span class="badge">
           <i class="bi bi-shield-exclamation" style="color:#b45309"></i>
-          <span>تعذر التوثيق</span>
+          <span>تعذر التحقق</span>
         </span>
       </div>
       <div class="muted mono">REF: #${id}</div>
@@ -210,7 +210,7 @@ app.get('/api/verify/:id', async (req, res) => {
       <div class="sep"></div>
       <div style="padding:8px;border:1px dashed #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;font-weight:700">
         <i class="bi bi-info-circle-fill" style="margin-left:6px"></i>
-        لم يتم العثور على هذا الإيصال في قاعدة البيانات.
+        لم يتم العثور على هذا العقد في قاعدة البيانات.
       </div>
       <div class="sep"></div>
       <div class="muted">حقوق المطور تنفيذ وبرمجة 3bdo 092-8102731</div>
@@ -224,7 +224,7 @@ app.get('/api/verify/:id', async (req, res) => {
     const showLicense = settings.showLicenseNumber !== false
     const licenseNumber = settings.licenseNumber || 'LIC-9821-LY'
     const P = '▍▍▍▍▍▍▍▍▍▍'
-    const officeTitle = 'محرر عقود'
+    const officeTitle = ''
     const responsible = (settings?.responsibleEditorName && String(settings.responsibleEditorName).trim()) || 'فتحي عبد الجواد'
     const responsibleDisplay = responsible || P
     const html = `<!doctype html>
@@ -232,7 +232,7 @@ app.get('/api/verify/:id', async (req, res) => {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>تحقق من الإيصال #${id}</title>
+    <title>تحقق من العقد #${id}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
       @page{size:A4;margin:8mm}
@@ -254,11 +254,11 @@ app.get('/api/verify/:id', async (req, res) => {
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h1 class="h" style="display:flex;align-items:center;gap:8px">
           <i class="bi bi-patch-check-fill" style="color:#16a34a"></i>
-          <span>تحقق من الإيصال</span>
+          <span>تحقق من العقد</span>
         </h1>
         <span class="badge">
           <i class="bi bi-shield-check" style="color:#16a34a"></i>
-          <span>موثق من قاعدة البيانات</span>
+          <span>تم التحقق من قاعدة البيانات</span>
         </span>
       </div>
       <div class="muted mono">REF: #${id}</div>
@@ -280,11 +280,21 @@ app.get('/api/verify/:id', async (req, res) => {
       <div class="row">
         <div>
           <div class="muted">تاريخ التحرير</div>
-          <div class="h mono">${c.creationDate ? new Date(c.creationDate).toLocaleDateString('en-GB') : P}</div>
+          <div class="h mono">${c.creationDate ? new Date(c.creationDate).toLocaleDateString('en-GB') : '------'}</div>
         </div>
         <div>
           <div class="muted">الحالة</div>
           <div class="h">${c.status || P}</div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="muted">بداية العقد</div>
+          <div class="h mono">${(c.startDate || c.creationDate) ? new Date(c.startDate || c.creationDate).toLocaleDateString('en-GB') : '------'}</div>
+        </div>
+        <div>
+          <div class="muted">نهاية العقد</div>
+          <div class="h mono">${c.endDate ? new Date(c.endDate).toLocaleDateString('en-GB') : '------'}</div>
         </div>
       </div>
       <div class="sep"></div>
@@ -295,8 +305,7 @@ app.get('/api/verify/:id', async (req, res) => {
             <div>الاسم: <strong>${c.party1?.name || P}</strong></div>
             <div>نوع الهوية: <strong>${c.party1?.idType || P}</strong></div>
             <div>رقم الهوية: <strong class="mono">${c.party1?.idNumber || P}</strong></div>
-            <div>الرقم الوطني: <strong class="mono">${c.party1?.nationalId || P}</strong></div>
-            <div>رقم الهاتف: <strong class="mono">${c.party1?.phone || P}</strong></div>
+            
           </div>
         </div>
         <div>
@@ -305,11 +314,16 @@ app.get('/api/verify/:id', async (req, res) => {
             <div>الاسم: <strong>${c.party2?.name || P}</strong></div>
             <div>نوع الهوية: <strong>${c.party2?.idType || P}</strong></div>
             <div>رقم الهوية: <strong class="mono">${c.party2?.idNumber || P}</strong></div>
-            <div>الرقم الوطني: <strong class="mono">${c.party2?.nationalId || P}</strong></div>
-            <div>رقم الهاتف: <strong class="mono">${c.party2?.phone || P}</strong></div>
+            
           </div>
         </div>
       </div>
+      <div class="sep"></div>
+      ${c.notes ? `<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin:8px 0">
+         <div style="background:#f1f5f9;padding:6px;text-align:center;font-weight:700;font-size:12px;color:#334155">الملاحظات</div>
+         <div style="padding:10px;color:#334155;font-size:14px">${c.notes}</div>
+      </div>` : ''}
+      
       <div class="sep"></div>
       <div class="muted">حقوق المطور تنفيذ وبرمجة 3bdo 092-8102731</div>
     </div>

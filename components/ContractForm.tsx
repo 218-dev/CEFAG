@@ -89,32 +89,7 @@ const PartyFields: React.FC<{
                 </div>
           </div>
         </div>
-        <div>
-            <label className={labelClasses}>الرقم الوطني (اختياري)</label>
-            <div className="relative">
-                <input 
-                    type="text" 
-                    placeholder="أدخل الرقم الوطني إن وُجد" 
-                    value={party.nationalId || ''} 
-                    onChange={(e) => onChange(e, 'nationalId', partyKey)} 
-                    className={inputClasses} 
-                />
-                <i className={`${iconClasses} bi-hash`}></i>
-            </div>
-        </div>
-        <div>
-            <label className={labelClasses}>رقم الهاتف (اختياري)</label>
-            <div className="relative">
-                <input 
-                    type="text" 
-                    placeholder="رقم الهاتف للتواصل" 
-                    value={party.phone || ''} 
-                    onChange={(e) => onChange(e, 'phone', partyKey)} 
-                    className={inputClasses} 
-                />
-                <i className={`${iconClasses} bi-telephone`}></i>
-            </div>
-        </div>
+        
       </div>
     </div>
   );
@@ -129,7 +104,7 @@ const ContractForm: React.FC<ContractFormProps> = ({ contract, onSave, onClose, 
       party1: { name: '', type: PartyType.Individual, idNumber: '', idType: IdType.IdCard },
       party2: { name: '', type: PartyType.Individual, idNumber: '', idType: IdType.IdCard },
       creationDate: new Date().toISOString().split('T')[0],
-      startDate: '',
+      startDate: new Date().toISOString().split('T')[0],
       endDate: '',
       value: 0,
       status: ContractStatus.Final,
@@ -137,15 +112,28 @@ const ContractForm: React.FC<ContractFormProps> = ({ contract, onSave, onClose, 
       keywords: [],
       notes: '',
       isArchived: false,
+      requireFingerprint: false,
     }
   );
+  const [months, setMonths] = useState<string>('');
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>, field?: string, party?: 'party1' | 'party2') => {
     const { name, value } = e.target;
     if (party && field) {
         setFormData(prev => ({ ...prev, [party]: { ...prev[party] as Party, [field]: value } }));
     } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'creationDate') {
+            const val = value as string;
+            setFormData(prev => ({ ...prev, creationDate: val, startDate: val }));
+            if (months && Number(months) > 0) {
+                const d = new Date(val);
+                d.setMonth(d.getMonth() + Number(months));
+                const end = d.toISOString().split('T')[0];
+                setFormData(prev => ({ ...prev, endDate: end }));
+            }
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     }
   };
   
@@ -158,21 +146,12 @@ const ContractForm: React.FC<ContractFormProps> = ({ contract, onSave, onClose, 
     e.preventDefault();
     
     const selectedType = contractTypes.find(t => t.name === formData.type);
-    let fileData;
-    
-    if (contract?.file) {
-        fileData = contract.file;
-    } else if (selectedType) {
-        fileData = selectedType.file;
-    }
     
     const submissionData = { ...formData };
     if (!hasSecondParty) {
         delete submissionData.party2;
     }
-
-    const finalContractData = { ...submissionData, file: fileData };
-    onSave(contract ? { ...finalContractData, id: contract.id } : finalContractData as Contract);
+    onSave(contract ? { ...submissionData, id: contract.id } : submissionData as Contract);
   };
 
   return (
@@ -279,31 +258,55 @@ const ContractForm: React.FC<ContractFormProps> = ({ contract, onSave, onClose, 
                         <div>
                             <label className={labelClasses}>بداية العقد</label>
                             <div className="relative">
-                                <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={inputClasses} />
+                                <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={inputClasses} disabled />
                                 <i className={`${iconClasses} bi-calendar-check`}></i>
                             </div>
                         </div>
                         <div>
-                            <label className={labelClasses}>نهاية العقد</label>
+                            <label className={labelClasses}>مدة العقد (أشهر)</label>
                             <div className="relative">
-                                <input type="date" name="endDate" value={formData.endDate || ''} onChange={handleChange} className={inputClasses} />
-                                <i className={`${iconClasses} bi-calendar-x`}></i>
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    placeholder="اكتب عدد الأشهر" 
+                                    value={months} 
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        setMonths(v);
+                                        if (v && Number(v) > 0) {
+                                            const base = formData.startDate || formData.creationDate;
+                                            const d = new Date(base);
+                                            d.setMonth(d.getMonth() + Number(v));
+                                            const end = d.toISOString().split('T')[0];
+                                            setFormData(prev => ({ ...prev, endDate: end }));
+                                        } else {
+                                            setFormData(prev => ({ ...prev, endDate: '' }));
+                                        }
+                                    }}
+                                    className={inputClasses}
+                                />
+                                <i className={`${iconClasses} bi-clock-history`}></i>
                             </div>
                         </div>
                       </div>
                   </section>
                   
                   <section>
-                      <h3 className={sectionHeaderClasses}><i className="bi bi-paperclip text-slate-400"></i> الملاحظات ونسخة العقد</h3>
+                            <h3 className={sectionHeaderClasses}><i className="bi bi-paperclip text-slate-400"></i> الملاحظات وإعدادات العرض</h3>
                       <div className="grid grid-cols-1 gap-6">
                          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <div className="flex items-center gap-3">
-                                <i className="bi bi-info-circle-fill text-amber-600 text-xl"></i>
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.requireFingerprint || false}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, requireFingerprint: e.target.checked }))}
+                                    className="mt-1 w-4 h-4 rounded text-amber-600 focus:ring-amber-600 border-slate-300"
+                                />
                                 <div>
-                                    <p className="text-sm font-bold text-slate-800">سيتم إرفاق نسخة العقد تلقائياً</p>
-                                    <p className="text-xs text-slate-500">سيتم استخدام نموذج العقد المرتبط بالنوع المختار ({formData.type || 'لم يتم الاختيار'}) عند الحفظ.</p>
+                                    <span className="block text-sm font-bold text-slate-800">إظهار مكان بصمة الإصبع في العقد</span>
+                                    <span className="block text-xs text-slate-500">يمكن تفعيل أو إيقاف مكان البصمة حسب الحاجة.</span>
                                 </div>
-                            </div>
+                            </label>
                          </div>
                          <div>
                             <label className={labelClasses}>كلمات مفتاحية للبحث</label>
@@ -368,7 +371,7 @@ const ContractForm: React.FC<ContractFormProps> = ({ contract, onSave, onClose, 
                       <div className="grid grid-cols-1 gap-3 pt-2 border-t border-slate-100 sm:border-0 sm:pt-0 bg-white sm:bg-transparent sticky bottom-0 p-4 sm:p-0 shadow-upper sm:shadow-none z-20">
                         <button type="submit" className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all flex justify-center items-center gap-3 group transform active:scale-95">
                             <i className="bi bi-check-circle-fill text-xl text-emerald-400 group-hover:text-emerald-300 transition-colors"></i>
-                            <span>حفظ البيانات وإصدار الفاتورة</span>
+                            <span>حفظ البيانات وإصدار العقد</span>
                         </button>
                         <button type="button" onClick={onClose} className="w-full bg-white border border-slate-300 text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all shadow-sm">
                             إلغاء الأمر

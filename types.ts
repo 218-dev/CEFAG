@@ -25,7 +25,6 @@ export interface ContractFile {
 
 export interface ContractTypeDefinition {
     name: string;
-    file: ContractFile;
 }
 
 export interface Party {
@@ -33,8 +32,6 @@ export interface Party {
   type: PartyType;
   idNumber: string;
   idType: IdType;
-  nationalId?: string;
-  phone?: string;
 }
 
 export interface Contract {
@@ -51,8 +48,8 @@ export interface Contract {
   editorName: string;
   keywords: string[];
   notes: string;
-  file?: ContractFile;
   isArchived: boolean;
+  requireFingerprint?: boolean;
 }
 
 export interface User {

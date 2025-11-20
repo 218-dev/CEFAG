@@ -88,12 +88,6 @@ const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({ contract, o
              </div>
           </div>
           <div className="flex gap-2">
-            {contract.file && (
-                <a href={contract.file.content} download={contract.file.name} className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors shadow-sm">
-                    <i className="bi bi-download"></i>
-                    تحميل النسخة
-                </a>
-            )}
             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm">
                 <i className="bi bi-x-lg text-lg"></i>
             </button>
@@ -156,27 +150,7 @@ const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({ contract, o
                 </div>
             )}
 
-            {contract.file && (
-                <div className="mt-8 bg-slate-900 rounded-xl p-1 overflow-hidden shadow-lg">
-                     <div className="bg-slate-800/50 p-3 flex justify-between items-center border-b border-slate-700">
-                        <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                            <i className="bi bi-paperclip text-amber-500"></i>
-                            مرفقات العقد
-                        </h4>
-                        <span className="text-xs text-slate-400 font-mono">{contract.file.name}</span>
-                     </div>
-                     <div className="bg-slate-900 p-4 flex items-center justify-center">
-                        <a 
-                            href={contract.file.content} 
-                            download={contract.file.name}
-                            className="flex flex-col items-center gap-3 py-6 px-10 rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-amber-500/50 transition-all group"
-                        >
-                            <i className="bi bi-file-earmark-pdf-fill text-4xl text-slate-600 group-hover:text-amber-500 transition-colors"></i>
-                            <span className="text-slate-300 font-bold text-sm group-hover:text-white">تحميل المستند الأصلي</span>
-                        </a>
-                     </div>
-                </div>
-            )}
+            
 
         </div>
       </div>

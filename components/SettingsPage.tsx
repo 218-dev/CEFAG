@@ -14,14 +14,7 @@ interface SettingsPageProps {
     setContractTypes: React.Dispatch<React.SetStateAction<ContractTypeDefinition[]>>;
 }
 
-const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-    });
-};
+// Removed file upload for contract types
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
     users, setUsers, 
@@ -33,7 +26,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     
     // Contract Type Form State
     const [newTypeName, setNewTypeName] = useState('');
-    const [newTypeFile, setNewTypeFile] = useState<File | null>(null);
 
     // New User Form State
     const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
@@ -123,31 +115,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
     const handleAddType = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(newTypeName && newTypeFile) {
+        if(newTypeName) {
             if(contractTypes.some(t => t.name === newTypeName)) {
                 alert('هذا النوع موجود مسبقاً');
                 return;
             }
-
-            try {
-                const base64 = await fileToBase64(newTypeFile);
-                const newType: ContractTypeDefinition = {
-                    name: newTypeName,
-                    file: {
-                        name: newTypeFile.name,
-                        content: base64,
-                        type: newTypeFile.type
-                    }
-                };
-
-                setContractTypes([...contractTypes, newType]);
-                setNewTypeName('');
-                setNewTypeFile(null);
-                addAuditLog(`إضافة نوع عقد جديد: ${newTypeName}`);
-            } catch (error) {
-                console.error("Error reading file", error);
-                alert("حدث خطأ أثناء قراءة الملف");
-            }
+            const newType: ContractTypeDefinition = { name: newTypeName };
+            setContractTypes([...contractTypes, newType]);
+            setNewTypeName('');
+            addAuditLog(`إضافة نوع عقد جديد: ${newTypeName}`);
         }
     };
 
@@ -158,11 +134,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if(e.target.files && e.target.files[0]) {
-            setNewTypeFile(e.target.files[0]);
-        }
-    }
+    
 
     const handleDownloadBackup = async () => {
         try {
@@ -381,12 +353,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     
                     {activeTab === 'general' && (
                         <div className="max-w-3xl">
-                            <h3 className="text-xl font-bold text-slate-800 mb-6">إدارة أنواع العقود والنماذج</h3>
+                            <h3 className="text-xl font-bold text-slate-800 mb-6">إدارة أنواع العقود</h3>
                             
                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-8">
                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                                     <i className="bi bi-plus-circle-fill text-amber-600"></i>
-                                    إضافة نوع جديد ونموذج عقد
+                                    إضافة نوع جديد
                                 </h4>
                                 <form onSubmit={handleAddType} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2">
@@ -403,29 +375,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             <i className={`${iconClasses} bi-pen`}></i>
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">نسخة العقد الفارغة (النموذج)</label>
-                                        <div className="relative border border-slate-300 rounded-md bg-white p-2 flex items-center peer focus-within:border-amber-600 focus-within:ring-1 focus-within:ring-amber-600">
-                                            <i className="bi bi-file-earmark-arrow-up text-slate-400 text-lg ml-auto mr-2"></i>
-                                            <input 
-                                                type="file"
-                                                onChange={handleFileChange}
-                                                accept="image/*,.pdf"
-                                                className="block w-full text-sm text-slate-500
-                                                file:ml-4 file:py-2 file:px-4
-                                                file:rounded-full file:border-0
-                                                file:text-xs file:font-bold
-                                                file:bg-amber-50 file:text-amber-700
-                                                hover:file:bg-amber-100"
-                                                required
-                                            />
-                                        </div>
-                                        <p className="text-xs text-slate-500 mt-1">يرجى رفع صورة أو ملف PDF لنموذج العقد الفارغ ليتم طباعته عند الإنشاء.</p>
-                                    </div>
+                                    
                                     <div className="md:col-span-2">
                                         <button type="submit" className="bg-slate-900 text-white w-full py-2.5 rounded-md font-bold hover:bg-slate-800 shadow-sm transition-colors flex items-center justify-center gap-2">
                                             <i className="bi bi-save"></i>
-                                            حفظ النوع والنموذج
+                                            حفظ النوع
                                         </button>
                                     </div>
                                 </form>
@@ -447,10 +401,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-800">{typeDef.name}</p>
-                                                    <p className="text-xs text-slate-500 flex items-center gap-1">
-                                                        <i className="bi bi-paperclip"></i>
-                                                        {typeDef.file.name}
-                                                    </p>
+                                                    <p className="text-xs text-slate-500">نوع عقد معرف فقط بالاسم</p>
                                                 </div>
                                             </div>
                                             <button 
@@ -476,7 +427,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input type="checkbox" checked={showLicenseNumber} onChange={(e)=>setShowLicenseNumber(e.target.checked)} className="w-4 h-4 rounded text-amber-600 focus:ring-amber-600 border-slate-300" />
-                                            <span className="text-sm font-bold text-slate-700">عرض رقم الترخيص على الإيصال</span>
+                                            <span className="text-sm font-bold text-slate-700">عرض رقم الترخيص على العقد</span>
                                         </div>
                                         <div className="relative md:col-span-2">
                                             <label className="block text-xs font-bold text-slate-600 mb-1.5">المحرر المسؤول</label>

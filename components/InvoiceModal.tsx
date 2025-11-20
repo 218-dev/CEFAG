@@ -6,12 +6,11 @@ interface InvoiceModalProps {
   onClose: () => void;
 }
 
-type PrintMode = 'none' | 'invoice' | 'file';
+type PrintMode = 'none' | 'contract';
 
 const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
   const EMPTY = '▍▍▍▍▍▍▍▍▍▍▍'
   const [printMode, setPrintMode] = useState<PrintMode>('none');
-  const [imgLoaded, setImgLoaded] = useState(false)
   const [hasPrinted, setHasPrinted] = useState(false)
   const [licenseNumber, setLicenseNumber] = useState<string>('LIC-9821-LY')
   const [showLicense, setShowLicense] = useState<boolean>(true)
@@ -19,21 +18,12 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
 
   const handlePrintInvoice = () => {
     setHasPrinted(false)
-    setPrintMode('invoice');
-    try { document.body.setAttribute('data-print','invoice') } catch {}
-  };
-
-  const handlePrintFile = () => {
-    if (!contract.file) return;
-    setHasPrinted(false)
-    setImgLoaded(false)
-    setPrintMode('file');
-    try { document.body.setAttribute('data-print','file') } catch {}
+    setPrintMode('contract');
+    try { document.body.setAttribute('data-print','contract') } catch {}
   };
 
   const handleBack = () => {
       setPrintMode('none');
-      setImgLoaded(false)
       setHasPrinted(false)
       try { document.body.removeAttribute('data-print') } catch {}
   }
@@ -66,23 +56,16 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
   }, [])
 
   useEffect(() => {
-    if (printMode === 'invoice' && !hasPrinted) {
+    if (printMode === 'contract' && !hasPrinted) {
       const t = setTimeout(() => {
         window.print()
       }, 500)
       return () => clearTimeout(t)
     }
-    if (printMode === 'file' && !hasPrinted) {
-      const delay = imgLoaded ? 150 : 900
-      const t = setTimeout(() => {
-        window.print()
-      }, delay)
-      return () => clearTimeout(t)
-    }
-  }, [printMode, imgLoaded, hasPrinted])
+  }, [printMode, hasPrinted])
 
   return (
-    <div className="fixed inset-0 bg-slate-900/95 flex justify-center items-center z-50 p-0 sm:p-4 backdrop-blur-md print:p-0 print:bg-white print:block print:relative overflow-y-auto" id="invoice-modal">
+  <div className="fixed inset-0 bg-slate-900/95 flex justify-center items-center z-50 p-0 sm:p-4 backdrop-blur-md print:p-0 print:bg-white print:block print:relative overflow-y-auto" id="invoice-modal">
       
       {/* Success Screen UI (Visible only when printMode is 'none') */}
       <div className={`bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform transition-all p-8 text-center space-y-6 print:hidden ${printMode !== 'none' ? 'hidden' : 'block'}`}>
@@ -107,20 +90,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                   <span className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                      <i className="bi bi-receipt-cutoff text-xl text-amber-500"></i>
                   </span>
-                  <span>طباعة إيصال توثيق عقد</span>
+                  <span>طباعة العقد</span>
               </button>
-              
-              {contract.file && (
-                  <button 
-                    onClick={handlePrintFile}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm flex items-center justify-center gap-3 group"
-                  >
-                       <span className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                          <i className="bi bi-file-earmark-pdf text-xl text-blue-600"></i>
-                       </span>
-                      <span>طباعة نسخة العقد المرفقة</span>
-                  </button>
-              )}
           </div>
 
           <button 
@@ -134,10 +105,11 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
 
 
       {/* Printable Container (This is what gets printed) */}
-      <div id="invoice-modal" className={`bg-white rounded-none shadow-none w-full max-w-4xl mx-auto ${printMode === 'none' ? 'hidden' : 'block'} print:block`}>
+      <style>{`@page{size:A4;margin:8mm}@media print{body *{visibility:hidden}#contract-print,#contract-print *{visibility:visible}#contract-print{position:absolute;left:0;top:0;width:100%}}`}</style>
+      <div id="contract-print" className={`bg-white rounded-none shadow-none w-full mx-auto ${printMode === 'none' ? 'hidden' : 'block'} print:block`} style={{ width: '210mm' }}>
             
-            {/* INVOICE DOCUMENT */}
-            <div className={`p-8 print:p-[8mm] relative z-10 flex flex-col justify-between min-h-[297mm] ${printMode === 'file' ? 'hidden print:hidden' : 'block'}`}>
+            {/* CONTRACT DOCUMENT */}
+            <div className={`p-8 print:p-[8mm] relative z-10 flex flex-col justify-between min-h-[297mm] ${printMode === 'contract' ? 'block' : 'hidden'} print:block`}>
                 <div>
                     {/* Header */}
                     <div className="text-center border-b border-slate-900 pb-4 mb-6 print:border-black">
@@ -165,7 +137,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                              </div>
                              <div className="text-left w-32 pt-2 flex flex-col items-center gap-1">
                                 <img src={`${location.origin}/api/verify-qr/${contract.id}`} alt="QR" className="w-20 h-20 border border-slate-300 rounded" />
-                                <span className="text-[10px] font-bold text-slate-600">امسح للتحقق من صحة الإيصال</span>
+                                <span className="text-[10px] font-bold text-slate-600">امسح للتحقق من صحة العقد</span>
                              </div>
                         </div>
                     </div>
@@ -186,7 +158,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                     <div className="border border-slate-200 rounded-xl overflow-hidden mb-6 print:border-black print:rounded-none">
                         <div className="bg-slate-900 text-white p-2 print:bg-black print:text-white">
                              <h3 className="font-bold text-sm flex items-center gap-2 justify-center">
-                                إيصال توثيق عقد رسمي
+                                وثيقة عقد
                              </h3>
                         </div>
                         <div className="p-4 grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
@@ -197,6 +169,14 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                             <div>
                                 <span className="block text-slate-500 text-xs font-bold uppercase mb-1">نوع العقد</span>
                                 <span className="font-bold text-lg text-slate-900">{contract.type}</span>
+                            </div>
+                            <div>
+                                <span className="block text-slate-500 text-xs font-bold uppercase mb-1">بداية العقد</span>
+                                <span className="font-mono font-bold text-slate-900">{(contract.startDate || contract.creationDate) ? new Date(contract.startDate || contract.creationDate).toLocaleDateString('en-GB') : '------'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-slate-500 text-xs font-bold uppercase mb-1">نهاية العقد</span>
+                                <span className="font-mono font-bold text-slate-900">{contract.endDate ? new Date(contract.endDate).toLocaleDateString('en-GB') : '------'}</span>
                             </div>
                         </div>
                         <div className="mx-4 mb-4 p-2 rounded-lg border border-rose-300 bg-rose-50 text-rose-700 text-sm font-bold flex items-center gap-2 print:bg-transparent print:text-black print:border-rose-400">
@@ -213,8 +193,6 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                                 <div className="flex items-center gap-2"><span className="text-slate-500">الاسم:</span><span className="font-bold text-slate-900">{contract.party1.name}</span></div>
                                 <div className="flex items-center gap-2"><span className="text-slate-500">نوع الهوية:</span><span className="font-bold text-slate-900">{contract.party1.idType}</span></div>
                                 <div className="flex items-center gap-2"><span className="text-slate-500">رقم الهوية:</span><span className="font-mono font-bold text-slate-900">{contract.party1.idNumber}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-slate-500">الرقم الوطني:</span><span className="font-mono font-bold text-slate-900">{contract.party1.nationalId || EMPTY}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-slate-500">رقم الهاتف:</span><span className="font-mono font-bold text-slate-900">{contract.party1.phone || EMPTY}</span></div>
                             </div>
                         </div>
                         {contract.party2 ? (
@@ -224,8 +202,6 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                                     <div className="flex items-center gap-2"><span className="text-slate-500">الاسم:</span><span className="font-bold text-slate-900">{contract.party2.name}</span></div>
                                     <div className="flex items-center gap-2"><span className="text-slate-500">نوع الهوية:</span><span className="font-bold text-slate-900">{contract.party2.idType}</span></div>
                                     <div className="flex items-center gap-2"><span className="text-slate-500">رقم الهوية:</span><span className="font-mono font-bold text-slate-900">{contract.party2.idNumber}</span></div>
-                                    <div className="flex items-center gap-2"><span className="text-slate-500">الرقم الوطني:</span><span className="font-mono font-bold text-slate-900">{contract.party2.nationalId || EMPTY}</span></div>
-                                    <div className="flex items-center gap-2"><span className="text-slate-500">رقم الهاتف:</span><span className="font-mono font-bold text-slate-900">{contract.party2.phone || EMPTY}</span></div>
                                 </div>
                             </div>
                         ) : (
@@ -236,21 +212,56 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                     </div>
                 </div>
 
-                {/* Footer Signature Area */}
-                <div className="flex justify-between mt-6 pt-6 border-t border-slate-900 print:border-black align-bottom">
-                    <div className="text-center w-1/3">
-                        <p className="font-bold mb-6 text-slate-500 text-xs uppercase tracking-widest">توقيع المحرر</p>
-                        {/* Empty space for signature */}
-                        <div className="h-20 border-b border-dashed border-slate-400 mb-2 w-3/4 mx-auto"></div>
-                        <p className="font-reem-ink text-xl text-slate-900">فتحي عبد الجواد</p>
-                    </div>
-                    <div className="text-center w-1/3">
-                        <p className="font-bold mb-4 text-slate-500 text-xs uppercase tracking-widest">الختم الرسمي</p>
-                        {/* Empty Circle for Stamp */}
-                        <div className="w-32 h-32 border-4 border-slate-300 border-double rounded-full mx-auto flex items-center justify-center text-slate-300 print:border-gray-400 print:text-gray-300">
-                            <span className="block text-[10px] font-bold opacity-50">ختم المكتب</span>
+                {/* Notes */}
+                {contract.notes && (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden mb-6 print:border-black print:rounded-none">
+                        <div className="bg-slate-100 p-2 print:bg-gray-200">
+                            <h4 className="font-bold text-sm text-slate-800 text-center">الملاحظات</h4>
+                        </div>
+                        <div className="p-4 text-slate-700 text-sm">
+                            {contract.notes}
                         </div>
                     </div>
+                )}
+
+                {/* Footer: signatures and fingerprint */}
+                <div className="mt-6 pt-6 border-t border-slate-900 print:border-black">
+                    <div className={`grid ${contract.party2 ? 'grid-cols-3' : 'grid-cols-2'} gap-6 items-end`}>
+                        <div className="text-center">
+                            <p className="font-bold mb-4 text-slate-500 text-xs uppercase tracking-widest">توقيع الطرف الأول</p>
+                            <div className="h-20 border-b border-dashed border-slate-400 mb-2 w-5/6 mx-auto"></div>
+                        </div>
+                        {contract.party2 && (
+                            <div className="text-center">
+                                <p className="font-bold mb-4 text-slate-500 text-xs uppercase tracking-widest">توقيع الطرف الثاني</p>
+                                <div className="h-20 border-b border-dashed border-slate-400 mb-2 w-5/6 mx-auto"></div>
+                            </div>
+                        )}
+                        <div className="text-center">
+                            <p className="font-bold mb-4 text-slate-500 text-xs uppercase tracking-widest">الختم وتوقيع المكتب</p>
+                            <div className="flex items-center justify-center gap-6 mb-2">
+                                <div className="w-28 h-28 border-4 border-slate-300 border-double rounded-full"></div>
+                                <div className="h-20 border-b border-dashed border-slate-400 w-40"></div>
+                            </div>
+                            <div className="text-slate-700 font-bold text-xs">{officeTitle}</div>
+                        </div>
+                    </div>
+                    {contract.requireFingerprint && (
+                        <div className="mt-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="text-center">
+                                    <p className="font-bold mb-2 text-slate-500 text-xs uppercase tracking-widest">بصمة الطرف الأول</p>
+                                    <div className="w-32 h-32 border-2 border-slate-300 rounded-md mx-auto"></div>
+                                </div>
+                                {contract.party2 && (
+                                    <div className="text-center">
+                                        <p className="font-bold mb-2 text-slate-500 text-xs uppercase tracking-widest">بصمة الطرف الثاني</p>
+                                        <div className="w-32 h-32 border-2 border-slate-300 rounded-md mx-auto"></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="text-center mt-4 text-[10px] text-slate-400 font-mono print:text-black print:mt-2">
@@ -260,25 +271,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ contract, onClose }) => {
                 </div>
             </div>
             
-            {/* ATTACHMENT SECTION (Only visible when printMode is 'file') */}
-            {contract.file && (
-                <div className={`w-full h-screen bg-white p-0 print:p-0 print:h-screen print:w-full flex items-center justify-center ${printMode === 'invoice' ? 'hidden print:hidden' : 'block'}`}>
-                    {contract.file.type.startsWith('image/') ? (
-                        <img 
-                            src={contract.file.content} 
-                            alt="نسخة العقد" 
-                            className="max-w-full max-h-full object-contain print:w-full print:h-full" 
-                            onLoad={() => setImgLoaded(true)}
-                        />
-                    ) : (
-                        <embed 
-                            src={contract.file.content}
-                            type={contract.file.type}
-                            className="w-full h-full print:w-full print:h-full"
-                        />
-                    )}
-                </div>
-            )}
+            
 
              {/* Back Button (Visible when viewing the printable version on screen) */}
              <div className="fixed top-6 left-6 print:hidden z-50">
